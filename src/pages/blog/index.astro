@@ -3,12 +3,26 @@ import BaseHead from '../../components/BaseHead.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
-import { getCollection } from 'astro:content';
 import FormattedDate from '../../components/FormattedDate.astro';
 
-const posts = (await getCollection('blog')).sort(
-	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
-);
+// Asegúrate de que posts está definido
+import { getCollection } from 'astro:content';
+const posts = await getCollection('blog');
+
+// Filtrar y ordenar los posts
+const sortedPosts = posts
+  .filter((post) => !!post.data.pubDate) // Filtrar posts con fecha válida
+  .sort((a, b) => {
+    const dateA = new Date(a.data.pubDate).toISOString().split('T')[0]; // Formato: YYYY-MM-DD
+    const dateB = new Date(b.data.pubDate).toISOString().split('T')[0]; // Formato: YYYY-MM-DD
+
+    return dateB.localeCompare(dateA); // Ordenar de más reciente a más antiguo
+  });
+
+// Toma los 3 últimos posts
+const latestPosts = sortedPosts.slice(0, 4);
+
+
 ---
 
 <!doctype html>
@@ -106,6 +120,26 @@ const posts = (await getCollection('blog')).sort(
 				</ul>
 			</section>
 		</main>
+
+		<section class="latest-posts">
+			<h2>Últimos Posts</h2>
+			<ul>
+				{
+				  latestPosts.map((post) => (
+					  <li>
+						<a href={`/blog/${post.id}/`}>
+						  <img width={720} height={360} src={post.data.heroImage} alt={post.data.title} />
+						  <h4 class="title">{post.data.title}</h4>
+						  <p class="date">
+							<FormattedDate date={post.data.pubDate} />
+						  </p>
+						</a>
+					  </li>
+					))
+				}
+			  </ul>
+		  </section>
+		  
 		<Footer />
 	</body>
 </html>
